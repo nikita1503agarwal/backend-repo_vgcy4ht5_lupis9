@@ -1,48 +1,58 @@
 """
-Database Schemas
+Database Schemas for Student Productivity App
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model corresponds to a MongoDB collection. The collection
+name is the lowercase of the class name (e.g., Summary -> "summary").
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from datetime import datetime
 
-# Example schemas (replace with your own):
+# Core entities
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class StudentResource(BaseModel):
+    """Represents an uploaded learning resource like PDF, audio, or image."""
+    title: str = Field(..., description="Human friendly title")
+    type: str = Field(..., description="pdf | audio | image | text")
+    source_name: Optional[str] = Field(None, description="Original filename if any")
+    content_text: Optional[str] = Field(None, description="Extracted/plain text content")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Summary(BaseModel):
+    title: str
+    resource_id: Optional[str] = None
+    content: str
+    key_points: List[str] = Field(default_factory=list)
+    reading_time_min: Optional[int] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Note(BaseModel):
+    title: str
+    resource_id: Optional[str] = None
+    bullets: List[str] = Field(default_factory=list)
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Flashcard(BaseModel):
+    resource_id: Optional[str] = None
+    question: str
+    answer: str
+    topic: Optional[str] = None
+
+class StudyTask(BaseModel):
+    title: str
+    due_date: Optional[datetime] = None
+    course: Optional[str] = None
+    source: Optional[str] = None
+    status: str = Field("todo", description="todo | in_progress | done")
+    priority: str = Field("medium", description="low | medium | high | urgent")
+
+class StudyPlan(BaseModel):
+    title: str
+    objectives: List[str] = Field(default_factory=list)
+    tasks: List[Dict[str, Any]] = Field(default_factory=list)
+    timeframe_days: int = 7
+
+class Doubt(BaseModel):
+    question: str
+    context: Optional[str] = None
+    explanation_steps: List[str] = Field(default_factory=list)
+    final_answer: Optional[str] = None
